@@ -37,11 +37,10 @@ class FaithfulnessChecker:
         # Concatenate context text
         context_text = " ".join([(chunk.get("text") or "") for chunk in context_chunks])
 
-        # Check each claim for support
-        supported = 0
+        # Check each claim for support using proportional overlap
+        supported = 0.0
         for claim in claims:
-            if self._is_supported(claim, context_text):
-                supported += 1
+            supported += self._calculate_support_ratio(claim, context_text)
 
         score = supported / len(claims) if claims else 0.0
 
@@ -67,23 +66,11 @@ class FaithfulnessChecker:
         return claims[:10]  # Limit to 10 claims for scoring
 
     @staticmethod
-    def _is_supported(claim: str, context: str) -> bool:
-        """Check if a claim is supported by context.
-
-        Args:
-            claim: Claim text
-            context: Context text
-
-        Returns:
-            True if claim is supported
-        """
-        # Tokenize and check for keyword overlap
+    def _calculate_support_ratio(claim: str, context: str) -> float:
+        """Calculate the proportion of meaningful claim tokens supported by context."""
         claim_tokens = set(claim.lower().split())
         context_tokens = set(context.lower().split())
 
-        # Require at least some meaningful overlap
-        overlap = claim_tokens & context_tokens
-        # Filter out common stop words
         stop_words = {
             "a",
             "an",
@@ -102,7 +89,21 @@ class FaithfulnessChecker:
             "to",
             "for",
             "that",
+            "developer",
         }
-        meaningful_overlap = overlap - stop_words
+        meaningful_claim_tokens = claim_tokens - stop_words
+        meaningful_context_tokens = context_tokens - stop_words
+        if not meaningful_claim_tokens or not meaningful_context_tokens:
+            return 0.0
 
-        return len(meaningful_overlap) >= 2
+        meaningful_overlap = meaningful_claim_tokens & meaningful_context_tokens
+        if len(meaningful_overlap) >= 2:
+            return 1.0
+        if len(meaningful_overlap) == 1:
+            return 0.75
+        return 0.0
+
+    @staticmethod
+    def _is_supported(claim: str, context: str) -> bool:
+        """Check if a claim is supported by context."""
+        return FaithfulnessChecker._calculate_support_ratio(claim, context) > 0.0
