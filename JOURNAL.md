@@ -54,7 +54,7 @@ None.
 **PR link:** https://github.com/ascherj/pathreview/pull/245  
 **Branch:** `fix/153-faithfulness-none-text`
 
-**What you built:**  
+**What I built:**  
 Added a defensive coercion in `FaithfulnessChecker.check()` so context chunks with `{"text": None}` are treated as empty strings before concatenation. This prevents the unhandled `TypeError` while preserving the existing faithfulness scoring behavior for valid inputs.
 
 **Tests added or updated:**  
