@@ -1,52 +1,181 @@
-## Week 7 — Issue selection
+# Week 7 — Issue Selection
 
 **Issue link:** https://github.com/jamjamgobambam/pathreview/issues/153  
 **Issue title:** Faithfulness checker crashes when a context chunk has `text: None`  
 **Tier:** [x] Tier 1 [ ] Tier 2 [ ] Tier 3  
 
-**Problem summary:**  
-I chose this issue to strengthen the reliability of PathReview’s RAG evaluation pipeline without changing scoring behavior or any user-facing features.  
+## Problem Summary
 
-The `FaithfulnessChecker` (`rag/evaluator/faithfulness_checker.py`) determines whether model-generated claims are supported by retrieved context. When an upstream retrieval step returns a chunk shaped like `{"text": None}`, the checker’s string-aggregation logic fails: `dict.get("text", "")` still returns `None` (because the key exists), so `" ".join(...)` raises `TypeError`.  
+I chose this issue to strengthen the reliability of PathReview’s Retrieval-Augmented Generation (RAG) evaluation pipeline without changing scoring behavior or any user-facing functionality.
 
-The fix adds a single defensive coercion at the evaluator boundary so every context value is normalized to a string before concatenation. This keeps the pipeline robust against malformed external data while leaving existing scoring logic untouched.
-## Week 8 — Reproduction & solution planning
+The `FaithfulnessChecker` (`rag/evaluator/faithfulness_checker.py`) determines whether model-generated claims are supported by retrieved context. When an upstream retrieval step returns a context chunk shaped like `{"text": None}`, the checker’s context aggregation logic fails. Although the code calls `dict.get("text", "")`, Python returns the explicit `None` value because the key exists, so the fallback empty string is never used. As a result, `" ".join(...)` receives a `NoneType` and raises a `TypeError`.
 
-**Reproduction commit link:** https://github.com/alexh30486-ui/pathreview/commit/5735928  
+The planned fix introduces a small defensive normalization step at the evaluator boundary so every context value is safely converted to a string before concatenation. This prevents crashes caused by malformed retrieval output while preserving the existing scoring algorithm and behavior for all valid inputs.
 
-**Reproduction summary:**  
-Reproduced locally with:
+---
+
+# Week 8 — Reproduction & Solution Planning
+
+**Reproduction commit link:**  
+https://github.com/alexh30486-ui/pathreview/commit/5735928
+
+## Reproduction Summary
+
+The issue was reproduced locally using the following code:
 
 ```python
-FaithfulnessChecker().check("Knows Python.", [{"text": None}])
+FaithfulnessChecker().check(
+    "Knows Python.",
+    [{"text": None}]
+)
+```
 
- This raised the issue:
+Running this immediately produced the following exception:
+
+```text
 TypeError: sequence item 0: expected str instance, NoneType found
+```
 
-Confirmed that Python’s .get("text", "") still returns None when the key "text" is present and holds an explicit None value. Because the default empty string is never used, the subsequent " ".join(...) call receives a NoneType and crashes. The same call works correctly when the chunk contains a normal string or when the "text" key is missing entirely, isolating the failure to the explicit-None case.
+Investigation confirmed that Python's `dict.get("text", "")` returns `None` whenever the `"text"` key exists but explicitly contains `None`. Since the default value is ignored in this case, the subsequent `" ".join(...)` operation attempts to concatenate a list containing a `NoneType`, causing the crash.
 
-PLAN.md link: https://github.com/alexh30486-ui/pathreview/blob/fix/153-faithfulness-none-text/PLAN.md
-Walkthrough video (recommended): N/A
-Blockers or open questions: None.
+Additional testing verified that:
 
+- Normal string values work correctly.
+- Missing `"text"` keys correctly fall back to an empty string.
+- Only explicit `None` values trigger the failure.
 
-**Chunk 3 of 4 — Week 9 Check-in 1**
+This isolated the bug to context normalization before claim evaluation.
 
-```markdown
-## Week 9 — Solution building & PR submission
+**PLAN.md link:**  
+https://github.com/alexh30486-ui/pathreview/blob/fix/153-faithfulness-none-text/PLAN.md
 
-### Check-in 1 (mid-week)
+**Walkthrough video (recommended):** N/A
 
-**Current progress:**  
-Completed the following sub-tasks from PLAN.md:
-- Isolated and reproduced the exact `TypeError` in `rag/evaluator/faithfulness_checker.py`.
-- Documented root cause, module mapping, and edge cases in `PLAN.md`.
-- Implemented the defensive fix: text extraction now uses `(chunk.get("text") or "")` so `None` values are safely coerced to empty strings before concatenation.
+**Blockers or open questions:** None.
 
-**Next steps:**  
-- Add a focused unit test for the `None`-text case in `tests/unit/test_faithfulness_checker.py`.
-- Run `make check` and `make test-unit` and confirm the change introduces no new failures.
-- Open draft PR #245, request peer/mentor feedback, then mark the PR ready for review.
+---
 
-**Blockers:**  
+# Week 9 — Solution Building & PR Submission
+
+## Check-in 1 (Mid-Week)
+
+### Current Progress
+
+Completed the following implementation tasks from `PLAN.md`:
+
+- Successfully isolated and reproduced the `TypeError` inside `rag/evaluator/faithfulness_checker.py`.
+- Documented the root cause, affected module, expected behavior, and edge cases within `PLAN.md`.
+- Implemented the defensive normalization by replacing context extraction with:
+
+```python
+(chunk.get("text") or "")
+```
+
+This safely converts explicit `None` values into empty strings before concatenation while preserving behavior for all existing valid inputs.
+
+### Next Steps
+
+- Add a focused regression test covering the `{"text": None}` case in `tests/unit/test_faithfulness_checker.py`.
+- Execute:
+
+```bash
+make check
+make test-unit
+```
+
+to verify no regressions have been introduced.
+
+- Open draft Pull Request **#245**.
+- Request mentor and peer feedback.
+- Address review comments.
+- Mark the PR ready for review after validation.
+
+### Blockers
+
 None.
+
+---
+
+# Test Coverage
+
+**Name:** Test Coverage
+
+**Labels:** `tests`
+
+## What Needs Testing?
+
+`FaithfulnessChecker.check()` should be tested specifically for its handling of context chunks where the `"text"` field explicitly contains a `None` value:
+
+```python
+{"text": None}
+```
+
+The goal is to ensure malformed retrieval output no longer crashes the evaluator.
+
+## Current State
+
+Current test coverage does **not** include regression tests for explicit `None` values.
+
+Specifically:
+
+- Existing tests cover valid string context.
+- Existing tests cover missing `"text"` keys (`{}`).
+- No tests verify behavior when `"text"` exists but is explicitly `None`.
+
+Because of this gap, the following runtime error can occur during context aggregation:
+
+```text
+TypeError: sequence item 0: expected str instance, NoneType found
+```
+
+This occurs before claim evaluation begins, preventing the faithfulness checker from returning a score.
+
+## Relevant Files
+
+### Source
+
+- `rag/evaluator/faithfulness_checker.py`
+
+This file contains `FaithfulnessChecker.check()`, where defensive normalization should be applied using:
+
+```python
+(chunk.get("text") or "")
+```
+
+### Tests
+
+- `tests/unit/test_faithfulness_checker.py`
+
+Regression tests should be added here following the existing project testing patterns.
+
+## Acceptance Criteria
+
+- [ ] Tests follow existing conventions used throughout `tests/`.
+- [ ] All newly added tests pass.
+- [ ] No existing tests fail after the change.
+- [ ] At least one test calls `FaithfulnessChecker.check()` using a context list containing:
+
+```python
+{"text": None}
+```
+
+and verifies that the method completes without raising a `TypeError`.
+
+- [ ] A regression test verifies that a mixed context list containing:
+  - valid string values,
+  - missing `"text"` keys,
+  - and explicit `None` values
+
+can be processed successfully, joining only valid text and returning a valid faithfulness score.
+
+- [ ] Existing faithfulness scoring behavior remains unchanged for valid inputs.
+
+## Expected Outcome
+
+After the fix:
+
+- Explicit `None` values are safely normalized to empty strings.
+- Context aggregation no longer raises a `TypeError`.
+- The evaluator continues processing remaining valid context.
+- Faithfulness scoring remains identical for all previously supported inputs.
+- Future regressions involving malformed context data are prevented through automated unit tests.
