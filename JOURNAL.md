@@ -19,19 +19,20 @@ Reproduced locally with:
 
 ```python
 FaithfulnessChecker().check("Knows Python.", [{"text": None}])
-```
 
-This immediately raised:
-
-```text
+ This raised the issue:
 TypeError: sequence item 0: expected str instance, NoneType found
-```
 
-Confirmed that Python’s `.get("text", "")` still returns `None` when the key `"text"` is present and holds an explicit `None` value. Because the default empty string is never used, the subsequent `" ".join(...)` call receives a `NoneType` and crashes. The same call works correctly when the chunk contains a normal string or when the `"text"` key is missing entirely, isolating the failure to the explicit-None case.
+Confirmed that Python’s .get("text", "") still returns None when the key "text" is present and holds an explicit None value. Because the default empty string is never used, the subsequent " ".join(...) call receives a NoneType and crashes. The same call works correctly when the chunk contains a normal string or when the "text" key is missing entirely, isolating the failure to the explicit-None case.
 
-**PLAN.md link:** https://github.com/alexh30486-ui/pathreview/blob/fix/153-faithfulness-none-text/PLAN.md  
-**Walkthrough video (recommended):** N/A  
-**Blockers or open questions:** None.
+PLAN.md link: https://github.com/alexh30486-ui/pathreview/blob/fix/153-faithfulness-none-text/PLAN.md
+Walkthrough video (recommended): N/A
+Blockers or open questions: None.
+
+
+**Chunk 3 of 4 — Week 9 Check-in 1**
+
+```markdown
 ## Week 9 — Solution building & PR submission
 
 ### Check-in 1 (mid-week)
@@ -49,19 +50,3 @@ Completed the following sub-tasks from PLAN.md:
 
 **Blockers:**  
 None.
-### Check-in 2 (end of week)
-
-**PR link:** https://github.com/ascherj/pathreview/pull/245  
-**Branch:** `fix/153-faithfulness-none-text`
-
-**What I built:**  
-Added a defensive coercion in `FaithfulnessChecker.check()` so context chunks with `{"text": None}` are treated as empty strings before concatenation. This prevents the unhandled `TypeError` while preserving the existing faithfulness scoring behavior for valid inputs.
-
-**Tests added or updated:**  
-`tests/unit/test_faithfulness_checker.py` — added a regression test for the `{"text": None}` case to confirm the checker completes without raising and still returns a valid faithfulness result.
-
-**Self-review confirmation:**  
-- [x] `make check` was run and reported existing repository-wide lint issues in unrelated modules; these failures are outside the faithfulness-checker change and do not indicate a regression from this PR.  
-- [x] The targeted verification for this fix succeeded: `make test-unit` and `pytest -q tests/unit/test_faithfulness_checker.py` both passed, including the new `None`-text regression case.
-
-**Draft PR feedback received from:** none
