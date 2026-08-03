@@ -2,8 +2,9 @@
 
 **Issue link:** https://github.com/jamjamgobambam/pathreview/issues/153  
 **Issue title:** Faithfulness checker crashes when a context chunk has `text: None`  
-**Tier:** [x] Tier 1 [ ] Tier 2 [ ] Tier 3  
+**Tier:** [x] Tier 1 [ ] Tier 2 [ ] Tier 3
 
+<<<<<<< HEAD
 ## Problem Summary
 
 I chose this issue to strengthen the reliability of PathReview’s Retrieval-Augmented Generation (RAG) evaluation pipeline without changing scoring behavior or any user-facing functionality.
@@ -31,11 +32,29 @@ FaithfulnessChecker().check(
 ```
 
 Running this immediately produced the following exception:
+=======
+## Problem summary
+
+This issue is narrow, reproducible, and isolated to the RAG evaluation path. The bug appears in `FaithfulnessChecker.check()` when context chunks are combined into one string for overlap scoring. If a retrieved chunk contains `{"text": None}`, the join operation crashes before any claim evaluation can happen.
+
+## Root cause
+
+The original aggregation logic used:
+
+```python
+context_text = " ".join([
+    chunk.get("text", "") for chunk in context_chunks
+])
+```
+
+That works when the `text` key is missing, but it fails when the key is present with an explicit `None` value. In that case, `dict.get()` returns `None`, and `" ".join(...)` raises:
+>>>>>>> ead2330 (Fix faithfulness checker None context handling)
 
 ```text
 TypeError: sequence item 0: expected str instance, NoneType found
 ```
 
+<<<<<<< HEAD
 Investigation confirmed that Python's `dict.get("text", "")` returns `None` whenever the `"text"` key exists but explicitly contains `None`. Since the default value is ignored in this case, the subsequent `" ".join(...)` operation attempts to concatenate a list containing a `NoneType`, causing the crash.
 
 Additional testing verified that:
@@ -179,3 +198,46 @@ After the fix:
 - The evaluator continues processing remaining valid context.
 - Faithfulness scoring remains identical for all previously supported inputs.
 - Future regressions involving malformed context data are prevented through automated unit tests.
+=======
+## Fix applied
+
+The context normalization step now treats both missing keys and explicit `None` values as empty strings before concatenation:
+
+```python
+context_text = " ".join((chunk.get("text") or "") for chunk in context_chunks)
+```
+
+This preserves the existing scoring logic and public interface while making the evaluator resilient to malformed upstream retrieval data.
+
+## Verification
+
+The regression case was verified directly:
+
+```python
+from rag.evaluator.faithfulness_checker import FaithfulnessChecker
+
+FaithfulnessChecker().check("Knows Python.", [{"text": None}])
+```
+
+Observed result:
+
+```text
+0.0
+```
+
+The targeted unit suite was also run successfully:
+
+```bash
+pytest -q tests/unit/test_faithfulness_checker.py
+```
+
+Result:
+
+```text
+22 passed in 0.46s
+```
+
+## Final review
+
+The change is limited to defensive context normalization in the evaluator. It does not alter claim extraction, overlap thresholds, or the overall faithfulness scoring behavior for valid inputs. The implementation is now aligned with the issue report, the regression test coverage, and the verified runtime behavior.
+>>>>>>> ead2330 (Fix faithfulness checker None context handling)

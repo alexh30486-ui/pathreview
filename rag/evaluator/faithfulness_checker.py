@@ -37,7 +37,7 @@ class FaithfulnessChecker:
 
         # Concatenate context text.
         # Treat chunks with {"text": None} as empty strings.
-        context_text = " ".join([(chunk.get("text") or "") for chunk in context_chunks])
+        context_text = " ".join((chunk.get("text") or "") for chunk in context_chunks)
 
         # Check each claim for support and aggregate a normalized score.
         supported = 0.0
@@ -96,7 +96,6 @@ class FaithfulnessChecker:
             "to",
             "for",
             "that",
-            "developer",
         }
 
         meaningful_claim_tokens = claim_tokens - stop_words
