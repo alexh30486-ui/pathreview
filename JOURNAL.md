@@ -4,7 +4,7 @@
 **Issue title:** Faithfulness checker crashes when a context chunk has `text: None`  
 **Tier:** [x] Tier 1 [ ] Tier 2 [ ] Tier 3
 
-<<<<<<< HEAD
+
 ## Problem Summary
 
 I chose this issue to strengthen the reliability of PathReview’s Retrieval-Augmented Generation (RAG) evaluation pipeline without changing scoring behavior or any user-facing functionality.
@@ -54,7 +54,7 @@ That works when the `text` key is missing, but it fails when the key is present 
 TypeError: sequence item 0: expected str instance, NoneType found
 ```
 
-<<<<<<< HEAD
+
 Investigation confirmed that Python's `dict.get("text", "")` returns `None` whenever the `"text"` key exists but explicitly contains `None`. Since the default value is ignored in this case, the subsequent `" ".join(...)` operation attempts to concatenate a list containing a `NoneType`, causing the crash.
 
 Additional testing verified that:
@@ -236,8 +236,24 @@ Result:
 ```text
 22 passed in 0.46s
 ```
+## Check-in 2 (End of Week)
+
+**PR link:** https://github.com/ascherj/pathreview/pull/245
+
+**What was built:**  
+Fixed a TypeError in FaithfulnessChecker that occurred when a context chunk contained `{"text": None}`. Added defensive normalization so the evaluator no longer crashes on malformed retrieval data.
+
+**Branch:** `fix/153-faithfulness-none-text`
+
+**Tests:**  
+- File: `tests/unit/test_faithfulness_checker.py`  
+- Added a regression test that calls `FaithfulnessChecker().check()` with a context chunk containing `{"text": None}` and verifies it returns a score without raising a TypeError.
+
+**Self-review:**
+- [x] `make check` passes
+- [x] `make test-unit` passes
 
 ## Final review
 
 The change is limited to defensive context normalization in the evaluator. It does not alter claim extraction, overlap thresholds, or the overall faithfulness scoring behavior for valid inputs. The implementation is now aligned with the issue report, the regression test coverage, and the verified runtime behavior.
->>>>>>> ead2330 (Fix faithfulness checker None context handling)
+
