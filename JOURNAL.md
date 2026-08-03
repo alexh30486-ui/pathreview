@@ -257,3 +257,18 @@ Fixed a TypeError in FaithfulnessChecker that occurred when a context chunk cont
 
 The change is limited to defensive context normalization in the evaluator. It does not alter claim extraction, overlap thresholds, or the overall faithfulness scoring behavior for valid inputs. The implementation is now aligned with the issue report, the regression test coverage, and the verified runtime behavior.
 
+## Reflection
+
+What was harder than you expected?
+The codebases definitely surprised me. I didn’t expect them to be that difficult. I had never really coded in other people’s repositories before, and this process opened my mind to how universal and important GitHub is as a skill in the working world. Another aspect of the course that surprised me was the variety of projects proposed and the different requirements and tools we had to use—such as AI/LLM agents and workflows.
+What did you learn about working in a large codebase?
+Contributing to someone else’s production code is very different from building your own project from scratch. In your own work you control the architecture, naming, and structure. In a shared codebase you have to adapt to existing conventions, understand how different parts connect, and be careful not to break things that other people rely on. Reading and navigating large, unfamiliar code becomes a core skill.
+
+How did AI tools help — and where did they fall short?
+AI assistance was most useful for quickly understanding unfamiliar sections of code and overall concepts for me personally, I used them to scan the scope of the work and work through the process myself, generating boilerplate, suggesting approaches, and helping debug smaller issues. It fell short when the problem required deep context about the specific project’s architecture or when the solution needed careful judgment about design trade-offs. In those cases I still had to dig into the codebase myself and reason through the system.
+
+What would you do differently if you started over?
+If I were to start over I would give myself more time to build solid foundations—brushing up on what current AI models are actually capable of, learning agentic workflows, and spending more time on planning. Many of the projects I didn’t plan properly for, which led me to fall behind compared with classmates who seemed to have a clearer grasp of these processes. I would also make better use of the collaboration time during breakout sessions.
+
+What are you most proud of from this module?
+I’m most proud of pushing through the discomfort of working in real, unfamiliar codebases and learning how to contribute effectively. Getting comfortable with GitHub, reading other people’s code, and using AI tools as part of a real workflow feels like a meaningful step toward professional-level work.
