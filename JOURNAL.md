@@ -48,7 +48,7 @@ context_text = " ".join([
 ```
 
 That works when the `text` key is missing, but it fails when the key is present with an explicit `None` value. In that case, `dict.get()` returns `None`, and `" ".join(...)` raises:
->>>>>>> ead2330 (Fix faithfulness checker None context handling)
+
 
 ```text
 TypeError: sequence item 0: expected str instance, NoneType found
