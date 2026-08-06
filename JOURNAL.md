@@ -257,6 +257,18 @@ Fixed a TypeError in FaithfulnessChecker that occurred when a context chunk cont
 
 The change is limited to defensive context normalization in the evaluator. It does not alter claim extraction, overlap thresholds, or the overall faithfulness scoring behavior for valid inputs. The implementation is now aligned with the issue report, the regression test coverage, and the verified runtime behavior.
 
+
+
+## Week 10 — Iteration & reflection
+
+### Reviewer feedback
+**Feedback received:** [ ] Yes  [x] No — still awaiting review. 
+
+**Summary of feedback:**
+No review came in. Per the Summer 2026 guidelines, reviewer feedback is not an active feature for this term.
+Functional codebase taught me that reading and understanding existing patterns is just as important as writing new code. I learned how to navigate complex dependency trees, respect established testing conventions, and ensure that my changes didn't introduce side effects in unrelated modules.Working in a large, established codebase taught me that reading and understanding existing patterns is just as important as writing new code. I learned how to navigate complex dependency trees, respect established testing conventions, and ensure that my changes didn't introduce side effects in unrelated modules.
+**How you responded:**
+Does not apply to Summer Cohort but AI tools were excellent for explaining complex, unfamiliar code blocks and suggesting boilerplate for tests, which significantly sped up my workflow. However, they occasionally hallucinated library methods or suggested patterns that didn't align with the project's specific architectural constraints, requiring me to double-check everything against the existing codebase.
 ## Reflection
 
 What was harder than you expected?
